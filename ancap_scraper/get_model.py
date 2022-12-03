@@ -73,6 +73,11 @@ response = requests.get(
 
 print(response.json())
 
+# {"errors":{"vehicle_type":{"0":["must be one of: light_car, small_car, medium_car, large_car, sports_car, compact_suv, medium_suv, large_suv, people_mover, utility, van"]}}}
+# {"errors":{"safety_rating":{"0":["must be one of: -1, 0, 1, 2, 3, 4, 5"]}}}
+
+# https://api.ancap.com.au/v1/search?safety_rating=5&vehicle_type=small_suv
+
 def get_report():
     return None
 
