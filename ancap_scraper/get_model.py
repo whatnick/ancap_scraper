@@ -56,22 +56,41 @@ params = {
 response = requests.get('https://www.ancap.com.au/api/search', params=params, cookies=cookies, headers=headers)
 print(response.json())
 
-params = {
-    'makeAndModel': [
-        'hyundai',
-        'i30',
-        '0cd5d0',
-    ],
-}
+#params = {
+#    'makeAndModel': [
+#        'hyundai',
+#        'i30',
+#        '0cd5d0',
+#    ],
+#}
 
-response = requests.get(
-    'https://www.ancap.com.au/_next/data/P3_wVNZZeGh1UT3kecVro/safety-ratings/hyundai/i30/0cd5d0.json',
-    params=params,
-    cookies=cookies,
-    headers=headers,
-)
+#response = requests.get(
+#    'https://www.ancap.com.au/_next/data/P3_wVNZZeGh1UT3kecVro/safety-ratings/hyundai/i30/0cd5d0.json',
+#    params=params,
+#    cookies=cookies,
+#    headers=headers,
+#)
 
 print(response.json())
+
+response = requests.get('https://www.ancap.com.au/api/config?', cookies=cookies, headers=headers)
+all_make_models = response.json()
+for make in all_make_models:
+    make_s = make['slug']
+    models = make["models"]
+    for model in models[0]:
+        model_s = model['slug']
+        params = {
+            'manufacturer_slug': make_s,
+            'model_slug': model_s,
+            'per_page': '48',
+            'sort_by': 'rating_year',
+            'sort_direction': 'desc',
+        }
+
+        response = requests.get('https://www.ancap.com.au/api/search', params=params, cookies=cookies, headers=headers)
+        print(response.json())
+
 
 # {"errors":{"vehicle_type":{"0":["must be one of: light_car, small_car, medium_car, large_car, sports_car, compact_suv, medium_suv, large_suv, people_mover, utility, van"]}}}
 # {"errors":{"safety_rating":{"0":["must be one of: -1, 0, 1, 2, 3, 4, 5"]}}}
