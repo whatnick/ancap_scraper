@@ -6,6 +6,8 @@ import numpy as np
 import pyocr
 import pyocr.builders
 
+import cv2 as cv
+
 FEATURES_BOX = (175,566,1001,3165)
 AU_AVAIL_BOX = (1003,566,1116,3165)
 NZ_AVAIL_BOX = (1116,566,1229,3165)
@@ -31,36 +33,65 @@ def get_tooling():
     return tool
 
 def get_safety_table(page_image) -> List[Dict[str,Tuple[bool,bool]]]:
-    all_features = get_safety_features(page_image)
-    au_avail = get_feature_available(page_image, AU_AVAIL_BOX,"AU")
-    nz_avail = get_feature_available(page_image, NZ_AVAIL_BOX,"NZ")
+    ocr_tool = get_tooling()
+    all_features = get_safety_features(page_image, ocr_tool)
 
 
-def get_safety_features(page_image) -> list:
+
+def get_safety_features(page_image, tool) -> list:
     img = Image.open(page_image)
     feat_img = img.crop(FEATURES_BOX)
-    tool = get_tooling()
+
     line_and_word_boxes = tool.image_to_string(
-        feat_img, lang="fra",
+        feat_img, lang="eng",
         builder=pyocr.builders.LineBoxBuilder()
     )
 
     for lbox in line_and_word_boxes:
         print(lbox)
 
+    au_avail = get_feature_available(page_image, AU_AVAIL_BOX,"AU")
+    nz_avail = get_feature_available(page_image, NZ_AVAIL_BOX,"NZ")
+
 def get_feature_available(page_image, zone, country):
     img = Image.open(page_image)
     crop_img = img.crop(zone)
     # 56 Rows of noughts and crosses
+    # Could use OpenCV Template Matcher
+    # https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html
     step = (zone[3]-zone[1])/SAFETY_TYPES
     step = SAFETY_STEP
+    x_template = "data/template_x.jpg"
+    o_template = "data/template_o.jpg"
     for i in range(SAFETY_TYPES):
         nought_cross = crop_img.crop((0,i*step,NOUGHT_CROSS_WIDTH,(i+1)*step))
-        nought_cross.save(f"test_{country}_{i}.jpg")
-        arr = np.array(nought_cross)
-        arr[arr>250] = 0
-        print(i,arr.mean())
-        
+        test_img = f"test_{country}_{i}.jpg"
+        nought_cross.save(test_img)
+        x_match = template_match(test_img,x_template)
+        o_match = template_match(test_img,o_template)
+        print(i, x_match, o_match)
+
+
+def template_match(image, templ):
+    template = cv.imread(templ,0)
+    w, h = template.shape[::-1]
+    img2 = cv.imread(image,0)
+    # All the 6 methods for comparison in a list
+    methods = ['cv.TM_CCOEFF_NORMED']
+    for meth in methods:
+        img = img2.copy()
+        method = eval(meth)
+        # Apply template Matching
+        res = cv.matchTemplate(img,template,method)
+        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+        if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
+            top_left = min_loc
+        else:
+            top_left = max_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        print(meth,top_left,bottom_right)
+    return (top_left,bottom_right)
 
 if __name__ == "__main__":
     page_with_table = sys.argv[1]

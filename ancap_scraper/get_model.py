@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import os
 
 cookies = {
     "_ga": "GA1.3.1517839011.1670030139",
@@ -84,19 +85,22 @@ for make in all_make_models:
         car_results = result["results"]
         for car in car_results:
             id = car["id"]
-            rating_year = car["ratingYear"]
-            details_url = (
-                f"https://www.ancap.com.au/safety-ratings/{make_s}/{model_s}/{id}"
-            )
-            page = requests.get(details_url, cookies=cookies, headers=headers)
-            soup = BeautifulSoup(page.text, "html.parser")
-            pdf_link = soup.find_all(
-                class_="outline-none border-2 cursor-pointer rounded-full font-bold select-none flex justify-center items-center whitespace-nowrap text-black border-black hover:bg-transparent hover:text-black active:bg-gray-500 active:border-gray-500 active:text-white h-11 px-6 text-sm"
-            )
-            full_report_link = (pdf_link[0]['href'])
-            response = requests.get(full_report_link)
-            with open(f"{make_s}_{model_s}_{rating_year}_{id}.pdf", "wb") as f:
-                f.write(response.content)
+            if car["ratingYear"] != None:
+                rating_year = int(car["ratingYear"])
+                rating_pdf = f"{make_s}_{model_s}_{rating_year}_{id}.pdf"
+                if rating_year >= 2018 and not os.path.exists(rating_pdf):
+                    details_url = (
+                        f"https://www.ancap.com.au/safety-ratings/{make_s}/{model_s}/{id}"
+                    )
+                    page = requests.get(details_url, cookies=cookies, headers=headers)
+                    soup = BeautifulSoup(page.text, "html.parser")
+                    pdf_link = soup.find_all(
+                        class_="outline-none border-2 cursor-pointer rounded-full font-bold select-none flex justify-center items-center whitespace-nowrap text-black border-black hover:bg-transparent hover:text-black active:bg-gray-500 active:border-gray-500 active:text-white h-11 px-6 text-sm"
+                    )
+                    full_report_link = (pdf_link[0]['href'])
+                    response = requests.get(full_report_link)
+                    with open(rating_pdf, "wb") as f:
+                        f.write(response.content)
 
 
 # {"errors":{"vehicle_type":{"0":["must be one of: light_car, small_car, medium_car, large_car, sports_car, compact_suv, medium_suv, large_suv, people_mover, utility, van"]}}}
