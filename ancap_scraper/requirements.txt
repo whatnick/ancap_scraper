@@ -1,0 +1,9 @@
+requests
+beautifulsoup4
+pypdfium2
+pillow
+pyocr
+opencv-python
+pandas
+scikit-learn
+scikit-image

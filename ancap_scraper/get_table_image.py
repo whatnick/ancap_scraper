@@ -2,6 +2,7 @@
 main library : https://pypi.org/project/pypdfium2/
 """
 import sys
+
 import pypdfium2 as pdfium
 
 

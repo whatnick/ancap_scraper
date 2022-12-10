@@ -1,16 +1,15 @@
-from PIL import Image
 import sys
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple
 
-import numpy as np
 import pyocr
 import pyocr.builders
+from PIL import Image
 
-import cv2 as cv
+from ancap_scraper.classify_result import predict
 
-FEATURES_BOX = (175,566,1001,3165)
-AU_AVAIL_BOX = (1003,566,1116,3165)
-NZ_AVAIL_BOX = (1116,566,1229,3165)
+FEATURES_BOX = (175, 566, 1001, 3165)
+AU_AVAIL_BOX = (1003, 566, 1116, 3165)
+NZ_AVAIL_BOX = (1116, 566, 1229, 3165)
 SAFETY_TYPES = 54
 SAFETY_STEP = 47.3
 NOUGHT_CROSS_WIDTH = 113
@@ -32,67 +31,45 @@ def get_tooling():
     print("Will use lang '%s'" % (lang))
     return tool
 
-def get_safety_table(page_image) -> List[Dict[str,Tuple[bool,bool]]]:
+
+def get_safety_table(page_image, id) -> List[Dict[str, Tuple[bool, bool]]]:
     ocr_tool = get_tooling()
-    all_features = get_safety_features(page_image, ocr_tool)
+    all_features = get_safety_features(page_image, ocr_tool, id)
 
 
-
-def get_safety_features(page_image, tool) -> list:
+def get_safety_features(page_image, tool, id) -> list:
     img = Image.open(page_image)
     feat_img = img.crop(FEATURES_BOX)
 
     line_and_word_boxes = tool.image_to_string(
-        feat_img, lang="eng",
-        builder=pyocr.builders.LineBoxBuilder()
+        feat_img, lang="eng", builder=pyocr.builders.LineBoxBuilder()
     )
 
     for lbox in line_and_word_boxes:
         print(lbox)
 
-    au_avail = get_feature_available(page_image, AU_AVAIL_BOX,"AU")
-    nz_avail = get_feature_available(page_image, NZ_AVAIL_BOX,"NZ")
+    au_avail = get_feature_available(page_image, AU_AVAIL_BOX, "AU", id)
+    nz_avail = get_feature_available(page_image, NZ_AVAIL_BOX, "NZ", id)
 
-def get_feature_available(page_image, zone, country):
+
+def get_feature_available(page_image, zone, country, id):
     img = Image.open(page_image)
     crop_img = img.crop(zone)
     # 56 Rows of noughts and crosses
     # Could use OpenCV Template Matcher
     # https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html
-    step = (zone[3]-zone[1])/SAFETY_TYPES
+    step = (zone[3] - zone[1]) / SAFETY_TYPES
     step = SAFETY_STEP
     x_template = "data/template_x.jpg"
     o_template = "data/template_o.jpg"
     for i in range(SAFETY_TYPES):
-        nought_cross = crop_img.crop((0,i*step,NOUGHT_CROSS_WIDTH,(i+1)*step))
-        test_img = f"test_{country}_{i}.jpg"
+        nought_cross = crop_img.crop((0, i * step, NOUGHT_CROSS_WIDTH, (i + 1) * step))
+        test_img = f"test_{country}_{i}_{id}.jpg"
         nought_cross.save(test_img)
-        x_match = template_match(test_img,x_template)
-        o_match = template_match(test_img,o_template)
-        print(i, x_match, o_match)
-
-
-def template_match(image, templ):
-    template = cv.imread(templ,0)
-    w, h = template.shape[::-1]
-    img2 = cv.imread(image,0)
-    # All the 6 methods for comparison in a list
-    methods = ['cv.TM_CCOEFF_NORMED']
-    for meth in methods:
-        img = img2.copy()
-        method = eval(meth)
-        # Apply template Matching
-        res = cv.matchTemplate(img,template,method)
-        min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
-        if method in [cv.TM_SQDIFF, cv.TM_SQDIFF_NORMED]:
-            top_left = min_loc
-        else:
-            top_left = max_loc
-        bottom_right = (top_left[0] + w, top_left[1] + h)
-        print(meth,top_left,bottom_right)
-    return (top_left,bottom_right)
+        result = predict(test_img,True)
+        print(result)
 
 if __name__ == "__main__":
     page_with_table = sys.argv[1]
-    get_safety_table(page_with_table)
+    id = sys.argv[2]
+    get_safety_table(page_with_table,id)

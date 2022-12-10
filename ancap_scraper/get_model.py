@@ -1,6 +1,7 @@
+import os
+
 import requests
 from bs4 import BeautifulSoup
-import os
 
 cookies = {
     "_ga": "GA1.3.1517839011.1670030139",
@@ -31,15 +32,15 @@ headers = {
 #    "vehicle_type": "large_suv",
 #    "per_page": "5",
 #    "is_current_model": "true",
-#}
+# }
 
-#response = requests.get(
+# response = requests.get(
 #    "https://www.ancap.com.au/api/search",
 #    params=params,
 #    cookies=cookies,
 #    headers=headers,
-#)
-#print(response.json())
+# )
+# print(response.json())
 
 # params = {
 #    'makeAndModel': [
@@ -56,7 +57,7 @@ headers = {
 #    headers=headers,
 # )
 
-#print(response.json())
+# print(response.json())
 
 response = requests.get(
     "https://www.ancap.com.au/api/config?", cookies=cookies, headers=headers
@@ -89,15 +90,13 @@ for make in all_make_models:
                 rating_year = int(car["ratingYear"])
                 rating_pdf = f"{make_s}_{model_s}_{rating_year}_{id}.pdf"
                 if rating_year >= 2018 and not os.path.exists(rating_pdf):
-                    details_url = (
-                        f"https://www.ancap.com.au/safety-ratings/{make_s}/{model_s}/{id}"
-                    )
+                    details_url = f"https://www.ancap.com.au/safety-ratings/{make_s}/{model_s}/{id}"
                     page = requests.get(details_url, cookies=cookies, headers=headers)
                     soup = BeautifulSoup(page.text, "html.parser")
                     pdf_link = soup.find_all(
                         class_="outline-none border-2 cursor-pointer rounded-full font-bold select-none flex justify-center items-center whitespace-nowrap text-black border-black hover:bg-transparent hover:text-black active:bg-gray-500 active:border-gray-500 active:text-white h-11 px-6 text-sm"
                     )
-                    full_report_link = (pdf_link[0]['href'])
+                    full_report_link = pdf_link[0]["href"]
                     response = requests.get(full_report_link)
                     with open(rating_pdf, "wb") as f:
                         f.write(response.content)
