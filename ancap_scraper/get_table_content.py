@@ -1,4 +1,5 @@
 import sys
+import os
 from typing import Dict, List, Tuple
 
 import pyocr
@@ -71,5 +72,6 @@ def get_feature_available(page_image, zone, country, id):
 
 if __name__ == "__main__":
     page_with_table = sys.argv[1]
-    id = sys.argv[2]
+    fname = os.path.basename(page_with_table)
+    id = fname.split("_")[-1].replace(".jpg","")
     get_safety_table(page_with_table,id)
