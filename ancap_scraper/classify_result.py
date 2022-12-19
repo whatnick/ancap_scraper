@@ -33,7 +33,6 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                    prog = 'Classify Feature Symbols ANCAP',
                     description = 'This program manages the SVM classifier for training table symbols to feature availability conversion',
                     epilog = 'Please train or use the classifier')
     parser.add_argument('-f', '--filename', dest="fname", default=None)           # Sample image to classify after training
@@ -117,14 +116,14 @@ def predict(url,encrich=False):
     model=pickle.load(open('img_model.p','rb'))
     probability=model.predict_proba(l)
     for ind,val in enumerate(CATEGORIES):
-        print(f'{val} = {probability[0][ind]*100}%')
         result = CATEGORIES[model.predict(l)[0]]
-        if encrich:
+        proba = probability[0][ind]
+        if encrich and  proba > 0.7:
             try:
+                print(f"Enriching class {val} for {proba} ")
                 shutil.move(url,os.path.join(DATADIR,result))
             except:
                 pass
-        print("The predicted image is : "+result)
     return result
 
 if __name__ == "__main__":
