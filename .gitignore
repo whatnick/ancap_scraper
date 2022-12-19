@@ -131,3 +131,4 @@ dmypy.json
 #Scraped PDF files
 *.pdf
 *.jpg
+*.xlsx
