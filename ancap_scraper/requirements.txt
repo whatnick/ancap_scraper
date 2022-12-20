@@ -8,3 +8,5 @@ pandas
 scikit-learn
 scikit-image
 openpyxl
+transformers[torch]
+timm
