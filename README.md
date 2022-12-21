@@ -8,10 +8,11 @@ Designed to download all car safety tests data from ANCAP website for analysis
 - OCR implemented using [PyOCR](https://gitlab.gnome.org/World/OpenPaperwork/pyocr/-/tree/master).
 - SVM Machine Learning from table symbols to variables implemented using [Scikit Learn](https://scikit-learn.org/stable/modules/svm.html).
 - Install Tesseract OCR Tooling
-- Run *python ancap_scraper\get_model.py* to scrape ANCAP for Data
-- Run *python ancap_scraper\get_table_image.py* to render PDF to images for parsing
-- Run *python ancap_scraper\get_table_content.py* to take a given page to save to Excel for features and status in AU/NZ.
-- Run *python ancap_scraper\classify_result.py* to retrain SVM classifier.
+- Run *PYTHONPATH=. python ancap_scraper\get_model.py* to scrape ANCAP for Data
+- Run *PYTHONPATH=. python ancap_scraper\get_table_image.py* to render PDF to images for parsing
+- Run *PYTHONPATH=. python ancap_scraper\get_table_content.py* to take a given page to save to Excel for features and status in AU/NZ.
+- Run *PYTHONPATH=. python ancap_scraper\classify_result.py* to retrain SVM classifier.
+- Run *PYTHONPATH=. python ancap_scraper\detect_table.py* to experiment with DETR based table detection.
 
 ## Roadmap
 - Set up [template matching](https://github.com/whatnick/ancap_scraper/issues/1) to fine align area of image from which to extract table
