@@ -22,8 +22,12 @@ def get_table(doc,id=None):
         page_indices=page_indices,
         scale=300 / 72,  # 300dpi resolution
     )
+    images = []
     for i, image in zip(page_indices, renderer):
-        image.save(f"out_{i}_{id}.jpg")
+        out_img = f"out_{i}_{id}.jpg"
+        images.append(out_img)
+        image.save(out_img)
+    return images
 
 
 if __name__ == "__main__":

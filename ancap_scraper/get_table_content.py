@@ -27,6 +27,7 @@ NZ_AVAIL_BOX_2018_2 = (2178, 705, 2291, 2124)
 SAFETY_TYPES = 54
 SAFETY_STEP = 47.3
 NOUGHT_CROSS_WIDTH = 113
+ENRICH = False #Enrich image samples for SVM for 2018 onwards symbology
 WORD_MAP = {
     "noughts" : "STANDARD",
     "crosses" : "NOT AVAILABLE",
@@ -39,12 +40,7 @@ def main():
     args = parse_args()
     page_with_table = args.fname
     report_year = args.year
-    fname = os.path.basename(page_with_table)
-    id = fname.split("_")[-1].replace(".jpg","")
-    if report_year > 2019:
-        file_xls = get_safety_table(page_with_table,id)
-    else:
-        file_xls = get_safety_table_2018(page_with_table,id)
+    file_xls = get_safety_table_all(page_with_table, report_year)
     print(f"Safety data saved to {file_xls}")
 
 
@@ -73,6 +69,14 @@ def get_tooling():
     print("Will use lang '%s'" % (lang))
     return tool
 
+def get_safety_table_all(page_with_table : str, report_year : int):
+    fname = os.path.basename(page_with_table)
+    id = fname.split("_")[-1].replace(".jpg","")
+    if report_year > 2019:
+        file_xls = get_safety_table_2020(page_with_table,id)
+    else:
+        file_xls = get_safety_table_2018(page_with_table,id)
+    return file_xls
 
 def get_safety_table_2018(page_image : str, id : str) -> str:
     """Read particular page image and save excel file with
@@ -95,7 +99,7 @@ def get_safety_table_2018(page_image : str, id : str) -> str:
     all_features.to_excel(file_table)
     return file_table
 
-def get_safety_table(page_image : str, id : str) -> str:
+def get_safety_table_2020(page_image : str, id : str) -> str:
     """Read particular page image and save excel file with
     features named after the ID of the car in the ANCAP
     database.
@@ -153,7 +157,7 @@ def get_feature_available(page_image, zone, country, id, s_type = SAFETY_TYPES):
         nought_cross = crop_img.crop((0, i * step, NOUGHT_CROSS_WIDTH, (i + 1) * step))
         test_img = f"test_{country}_{i}_{id}.jpg"
         nought_cross.save(test_img)
-        result = predict(test_img,True)
+        result = predict(test_img,ENRICH)
         results.append(result)
     return results
 
