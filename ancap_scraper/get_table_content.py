@@ -96,7 +96,7 @@ def get_safety_table_2018(page_image : str, id : str) -> str:
     all_features = pd.concat([feature_set_1,feature_set_2])
     # TODO : DRY the file save
     file_table = f"{id}_features.xlsx"
-    all_features.to_excel(file_table)
+    all_features.to_excel(file_table,index=False)
     return file_table
 
 def get_safety_table_2020(page_image : str, id : str) -> str:
@@ -114,7 +114,7 @@ def get_safety_table_2020(page_image : str, id : str) -> str:
     ocr_tool = get_tooling()
     all_features = get_safety_features(page_image, ocr_tool, id)
     file_table = f"{id}_features.xlsx"
-    all_features.to_excel(file_table)
+    all_features.to_excel(file_table,index=False)
     return file_table
 
 
