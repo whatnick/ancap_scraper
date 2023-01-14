@@ -10,7 +10,7 @@ labels_dir = os.path.join(data_path,"labels")
 
 # Read images and annotations
 images = [os.path.join(images_dir, x) for x in os.listdir(images_dir) if x[-3:] == "jpg"]
-annotations = [os.path.join(labels_dir, x) for x in os.listdir(labels_dir) if x[-3:] == "txt"]
+annotations = [os.path.join(labels_dir, x) for x in os.listdir(labels_dir) if ((x[-3:] == "txt") and (not "labels.txt" in x))]
 
 # Filter images with valid annotations
 if len(images) > len(annotations):
