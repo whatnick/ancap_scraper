@@ -17,10 +17,10 @@ for year in YEARS:
         excel_report = os.path.join(XLS_FOLDER, excel_report)
         all_images = get_table(report)
         table_image = all_images[-1]
-        # HACK: Cache table images
-        shutil.copy(table_image,"page_samples")
-        #file_xls = get_safety_table_all(table_image, year)
-        #print(f"Parsed {file_xls} from {report}")
-        #shutil.move(file_xls,excel_report)
+        # HACK: Cache table images for training ML detector
+        #shutil.copy(table_image,"page_samples")
+        file_xls = get_safety_table_all(table_image, year)
+        print(f"Parsed {file_xls} from {report}")
+        shutil.move(file_xls,excel_report)
 
 
