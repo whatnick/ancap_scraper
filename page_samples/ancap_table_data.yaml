@@ -1,0 +1,10 @@
+path: ../Ancap_Scraper/page_samples
+train: images/train/ 
+val:  images/val/
+test: images/test/
+
+# number of classes
+nc: 1
+
+# class names
+names: ["table"]
