@@ -26,3 +26,5 @@ Designed to download all car safety tests data from ANCAP website for analysis
 - Add a web service to lookup vehicle models by particular set of safety features.
 - Link to vehicle images.
 - Extract test result photos for impact tests on bonnet etc.
+- Extract older reports using Langchain PDFLoader and Kor
+- Query extracted Excel/CSV files using Langchain pandas agent.

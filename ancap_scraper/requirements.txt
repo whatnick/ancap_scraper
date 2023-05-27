@@ -10,3 +10,12 @@ scikit-image
 openpyxl
 transformers[torch]
 timm
+langchain 
+openai 
+chromadb 
+tiktoken
+python-dotenv
+unstructured
+Cython
+pypdf
+tabulate
