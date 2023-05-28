@@ -11,7 +11,7 @@ all_df = []
 for report in all_reports:
     all_df.append(pd.read_excel(report))
 
-agent = create_pandas_dataframe_agent(OpenAI(temperature=0), all_df, verbose=True)
+agent = create_pandas_dataframe_agent(OpenAI(temperature=0), all_df[0:7], verbose=True)
 agent.run("which features are available in both au and nz for all?")
 
 from langchain.document_loaders import PyPDFDirectoryLoader
