@@ -1,0 +1,166 @@
+# Argo CronWorkflow — runs the full ingestion pipeline weekly
+# Install Argo Workflows: kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/latest/download/quick-start-minimal.yaml
+#
+# Manual trigger: argo submit -n ancap deploy/argo/ingestion-workflow.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: ancap-ingestion
+  namespace: ancap
+spec:
+  schedule: "0 2 * * 0"  # Every Sunday at 2 AM
+  concurrencyPolicy: Replace
+  workflowSpec:
+    entrypoint: ingestion-pipeline
+    volumeClaimTemplates:
+      - metadata:
+          name: work
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 10Gi
+    templates:
+      # ---- DAG orchestrator ----
+      - name: ingestion-pipeline
+        dag:
+          tasks:
+            - name: scrape-pdfs
+              template: scraper
+            - name: render-pages
+              template: renderer
+              dependencies: [scrape-pdfs]
+            - name: extract-tables
+              template: extractor
+              dependencies: [render-pages]
+            - name: embed-vectors
+              template: embedder
+              dependencies: [scrape-pdfs]  # embeds raw PDFs, can run parallel to render+extract
+            - name: sync-to-s3
+              template: s3-sync
+              dependencies: [scrape-pdfs, extract-tables, embed-vectors]
+
+      # ---- Step 1: Scrape ANCAP PDFs ----
+      - name: scraper
+        container:
+          image: ancap-scraper-pipeline
+          command: [python, -m, ancap_scraper.get_model]
+          volumeMounts:
+            - name: work
+              mountPath: /app/safety_data
+              subPath: pdfs
+          resources:
+            requests: { memory: "256Mi", cpu: "100m" }
+            limits: { memory: "512Mi", cpu: "250m" }
+
+      # ---- Step 2: Render PDF pages to images ----
+      - name: renderer
+        container:
+          image: ancap-scraper-pipeline
+          command: [python, -c]
+          args:
+            - |
+              import glob
+              from ancap_scraper.get_table_image import get_table
+              for pdf in glob.glob('/app/safety_data/*.pdf'):
+                  try:
+                      get_table(pdf)
+                  except Exception as e:
+                      print(f"Failed {pdf}: {e}")
+          workingDir: /app/safety_data/images
+          volumeMounts:
+            - name: work
+              mountPath: /app/safety_data
+              subPath: pdfs
+            - name: work
+              mountPath: /app/safety_data/images
+              subPath: images
+          resources:
+            requests: { memory: "512Mi", cpu: "250m" }
+            limits: { memory: "1Gi", cpu: "500m" }
+
+      # ---- Step 3: OCR + SVM extract tables to Excel ----
+      - name: extractor
+        container:
+          image: ancap-scraper-pipeline
+          command: [python, -c]
+          args:
+            - |
+              import os, shutil, glob
+              from ancap_scraper.get_model import glob_all_reports
+              from ancap_scraper.get_table_image import get_table
+              from ancap_scraper.get_table_content import get_safety_table_all
+
+              os.chdir('/app')
+              for year in [2018, 2019, 2020, 2021, 2022, 2023, 2024]:
+                  for report in glob.glob(f'/app/safety_data/*_{year}_*.pdf'):
+                      try:
+                          excel_name = os.path.basename(report).replace('.pdf', '.xlsx')
+                          excel_path = os.path.join('/app/excel', excel_name)
+                          if os.path.exists(excel_path):
+                              continue
+                          images = get_table(report)
+                          table_image = images[-1]
+                          xls = get_safety_table_all(table_image, year)
+                          shutil.move(xls, excel_path)
+                          print(f"Extracted {excel_path}")
+                      except Exception as e:
+                          print(f"Failed {report}: {e}")
+          volumeMounts:
+            - name: work
+              mountPath: /app/safety_data
+              subPath: pdfs
+            - name: work
+              mountPath: /app/excel
+              subPath: excel
+          resources:
+            requests: { memory: "1Gi", cpu: "500m" }
+            limits: { memory: "2Gi", cpu: "1" }
+
+      # ---- Step 4: Embed PDFs into ChromaDB ----
+      - name: embedder
+        container:
+          image: ancap-scraper-embedder
+          command: [python, embedder.py]
+          args:
+            - --pdf-dir=/app/safety_data
+            - --chroma-host=chromadb.ancap.svc.cluster.local
+            - --chroma-port=8000
+          envFrom:
+            - configMapRef:
+                name: ancap-config
+            - secretRef:
+                name: aws-credentials
+          volumeMounts:
+            - name: work
+              mountPath: /app/safety_data
+              subPath: pdfs
+          resources:
+            requests: { memory: "512Mi", cpu: "250m" }
+            limits: { memory: "1Gi", cpu: "500m" }
+
+      # ---- Step 5: Sync data to S3 for durable backup ----
+      - name: s3-sync
+        container:
+          image: amazon/aws-cli:latest
+          command: [sh, -c]
+          args:
+            - |
+              aws s3 sync /data/pdfs s3://${S3_BUCKET}/pdfs/ --size-only
+              aws s3 sync /data/excel s3://${S3_BUCKET}/excel/ --size-only
+              echo "S3 sync complete"
+          envFrom:
+            - configMapRef:
+                name: ancap-config
+            - secretRef:
+                name: aws-credentials
+          volumeMounts:
+            - name: work
+              mountPath: /data/pdfs
+              subPath: pdfs
+            - name: work
+              mountPath: /data/excel
+              subPath: excel
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits: { memory: "256Mi", cpu: "250m" }

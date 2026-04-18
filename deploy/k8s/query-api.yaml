@@ -1,0 +1,65 @@
+# FastAPI query service — always on
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: query-api
+  namespace: ancap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: query-api
+  template:
+    metadata:
+      labels:
+        app: query-api
+    spec:
+      containers:
+        - name: query-api
+          image: ancap-scraper-query-api  # Tilt auto-injects the correct image ref
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: ancap-config
+            - secretRef:
+                name: aws-credentials
+          volumeMounts:
+            - name: ancap-chromadb
+              mountPath: /data/chromadb
+              readOnly: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: ancap-chromadb
+          persistentVolumeClaim:
+            claimName: ancap-chromadb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-api
+  namespace: ancap
+spec:
+  selector:
+    app: query-api
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -1,0 +1,10 @@
+# SOPS configuration — tells sops which keys to use for encryption
+# age is simpler than PGP and works well for local/team GitOps
+creation_rules:
+  # All .enc.yaml files under deploy/sops/ use the age key
+  - path_regex: deploy/sops/.*\.enc\.yaml$
+    age: >-
+      age1REPLACE_WITH_YOUR_AGE_PUBLIC_KEY
+  # Fallback: encrypt everything with the same key
+  - age: >-
+      age1REPLACE_WITH_YOUR_AGE_PUBLIC_KEY

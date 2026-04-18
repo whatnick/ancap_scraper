@@ -39,8 +39,8 @@ def get_all_reports(use_cache = False):
             response = requests.get(
                 "https://www.ancap.com.au/api/search",
                 params=params,
-                cookies=cookies,
-                headers=headers,
+                cookies=COOKIES,
+                headers=HEADERS,
             )
             result = response.json()
             car_results = result["results"]
@@ -53,7 +53,7 @@ def get_all_reports(use_cache = False):
                     all_reports.append(rating_pdf)
                     if not os.path.exists(rating_pdf):
                         details_url = f"https://www.ancap.com.au/safety-ratings/{make_s}/{model_s}/{id}"
-                        page = requests.get(details_url, cookies=cookies, headers=headers)
+                        page = requests.get(details_url, cookies=COOKIES, headers=HEADERS)
                         soup = BeautifulSoup(page.text, "html.parser")
                         pdf_link = soup.find_all(
                             class_="outline-none border-2 cursor-pointer rounded-full font-bold select-none flex justify-center items-center whitespace-nowrap text-black border-black hover:bg-transparent hover:text-black active:bg-gray-500 active:border-gray-500 active:text-white h-11 px-6 text-sm"

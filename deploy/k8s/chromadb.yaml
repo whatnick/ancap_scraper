@@ -1,0 +1,48 @@
+# ChromaDB — local vector store as a StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chromadb
+  namespace: ancap
+spec:
+  serviceName: chromadb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chromadb
+  template:
+    metadata:
+      labels:
+        app: chromadb
+    spec:
+      containers:
+        - name: chromadb
+          image: chromadb/chroma:0.5.23
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: ancap-chromadb
+              mountPath: /chroma/chroma
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: ancap-chromadb
+          persistentVolumeClaim:
+            claimName: ancap-chromadb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromadb
+  namespace: ancap
+spec:
+  selector:
+    app: chromadb
+  ports:
+    - port: 8000
+      targetPort: 8000

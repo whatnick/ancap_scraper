@@ -1,0 +1,18 @@
+# Cloudflare Tunnel configuration
+# Place at ~/.cloudflared/config.yml after running:
+#   cloudflared tunnel login
+#   cloudflared tunnel create ancap-tunnel
+#   cloudflared tunnel route dns ancap-tunnel ancap.yourdomain.com
+
+tunnel: ancap-tunnel
+credentials-file: /home/user/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # Frontend — the public face
+  - hostname: ancap.yourdomain.com
+    service: http://frontend.ancap.svc.cluster.local:8501
+  # API — optional direct access for programmatic use
+  - hostname: ancap-api.yourdomain.com
+    service: http://query-api.ancap.svc.cluster.local:8000
+  # Catch-all (required by Cloudflare)
+  - service: http_status:404

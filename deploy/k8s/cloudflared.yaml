@@ -1,0 +1,47 @@
+# Cloudflare Tunnel — exposes the frontend to the internet
+# No inbound firewall rules or port forwarding needed.
+#
+# Setup:
+#   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+#   2. cloudflared tunnel login
+#   3. cloudflared tunnel create ancap-tunnel
+#   4. cloudflared tunnel route dns ancap-tunnel ancap.yourdomain.com
+#   5. Copy the tunnel token into deploy/k8s/secrets.yaml -> TUNNEL_TOKEN
+#   6. kubectl apply -f deploy/k8s/cloudflared.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: ancap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:latest
+          args:
+            - tunnel
+            - --no-autoupdate
+            - run
+            - --token
+            - $(TUNNEL_TOKEN)
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-tunnel
+                  key: TUNNEL_TOKEN
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"

@@ -1,0 +1,41 @@
+# Argo Workflows Helm chart values for local K8s development
+# Chart: https://github.com/argoproj/argo-helm/tree/main/charts/argo-workflows
+
+server:
+  # Use server auth mode for local dev (no SSO)
+  extraArgs:
+    - --auth-mode=server
+  serviceType: ClusterIP
+
+workflow:
+  serviceAccount:
+    create: true
+    name: argo-workflow
+
+controller:
+  # Use emissary executor — works without docker socket
+  containerRuntimeExecutor: emissary
+
+  workflowNamespaces:
+    - ancap
+
+  # Resource limits for the controller itself
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+
+  persistence:
+    # Skip postgres for local dev — use in-memory
+    archive: false
+
+# For local dev, configure RBAC so the controller can manage workflows in the ancap namespace
+createAggregateClusterRoles: true
+
+# Minimal CRD install
+crds:
+  install: true
+  keep: false

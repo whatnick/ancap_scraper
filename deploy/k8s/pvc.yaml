@@ -1,0 +1,45 @@
+# Persistent Volume Claims for shared data across microservices
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ancap-pdfs
+  namespace: ancap
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ancap-excel
+  namespace: ancap
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ancap-chromadb
+  namespace: ancap
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ancap-models
+  namespace: ancap
+spec:
+  accessModes: [ReadOnlyMany]
+  resources:
+    requests:
+      storage: 1Gi

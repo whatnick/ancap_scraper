@@ -132,3 +132,13 @@ dmypy.json
 *.pdf
 *.jpg
 *.xlsx
+
+.vscode/
+
+# SOPS — never commit private keys or decrypted secrets
+deploy/sops/age-key.txt
+deploy/sops/secrets.dec.yaml
+deploy/k8s/secrets.decrypted.yaml
+
+# Tilt
+.tilt-dev/
